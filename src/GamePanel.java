@@ -92,7 +92,7 @@ public class GamePanel extends JPanel implements Runnable{
 
         Graphics2D g2 = (Graphics2D) g;
 
-        g2.setColor(Color.white);
+        g2.setColor(Color.red);
         g2.fillRect(playerX, playerY, objectSize, objectSize);
         g2.dispose();
     }
