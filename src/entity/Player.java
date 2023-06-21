@@ -27,28 +27,31 @@ public class Player extends Entity {
     private int currentImageIndex;
     private int frameCounter;
 
-    public Player(int x, int y) {
-        super(x, y);
-        speed = 4;
+    private final GamePanel gp;
+
+    public Player(GamePanel gp) {
+        super(gp.SCREEN_WIDTH / 2, gp.SCREEN_HEIGHT / 2, 4);
+        this.gp = gp;
         currentImageIndex = 4;
         direction = "down";
         frameCounter = 0;
     }
 
-    public void update(boolean isUpPressed, boolean isDownPressed, boolean isLeftPressed, boolean isRightPressed) {
+
+    public void update() {
         int newCount;
         String previousDirection = direction;
 
-        if (isUpPressed) {
+        if (gp.keyHandler.isUpPressed()) {
             moveUp();
             direction = "up";
-        } else if (isDownPressed) {
+        } else if (gp.keyHandler.isDownPressed()) {
             moveDown();
             direction = "down";
-        } else if (isLeftPressed) {
+        } else if (gp.keyHandler.isLeftPressed()) {
             moveLeft();
             direction = "left";
-        } else if (isRightPressed) {
+        } else if (gp.keyHandler.isRightPressed()) {
             moveRight();
             direction = "right";
         } else {
@@ -68,7 +71,8 @@ public class Player extends Entity {
 
         frameCounter++;
 
-        if (!isUpPressed && !isDownPressed && !isLeftPressed && !isRightPressed) {
+        if (!gp.keyHandler.isUpPressed() && !gp.keyHandler.isDownPressed() &&
+                !gp.keyHandler.isLeftPressed() && !gp.keyHandler.isRightPressed()) {
             currentImageIndex = getDirectionOffset() + 1;
         }
     }

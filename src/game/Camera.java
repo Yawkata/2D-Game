@@ -4,9 +4,9 @@ public class Camera {
     private int x;
     private int y;
 
-    public Camera(int x, int y) {
-        this.x = x;
-        this.y = y;
+    public Camera() {
+        this.x = 0;
+        this.y = 0;
     }
 
     public void setPosition(int x, int y) {
