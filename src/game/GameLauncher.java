@@ -1,9 +1,11 @@
+package game;
+
 public class GameLauncher {
-    public GameLauncher(){
+    public GameLauncher() {
         new Window();
     }
 
-    public static void main(String[] args){
+    public static void main(String[] args) {
         new GameLauncher();
     }
 }
