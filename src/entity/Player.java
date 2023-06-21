@@ -1,5 +1,7 @@
 package entity;
 
+import game.GamePanel;
+
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
@@ -28,17 +30,9 @@ public class Player extends Entity {
     public Player(int x, int y) {
         super(x, y);
         speed = 4;
-        currentImageIndex = 5;
+        currentImageIndex = 4;
         direction = "down";
         frameCounter = 0;
-    }
-
-    public ArrayList<Image> getTextures() {
-        return movementTextures;
-    }
-
-    public int getCurrentImageIndex() {
-        return currentImageIndex;
     }
 
     public void update(boolean isUpPressed, boolean isDownPressed, boolean isLeftPressed, boolean isRightPressed) {
@@ -86,5 +80,10 @@ public class Player extends Entity {
             case "right" -> 9;
             default -> 0;
         };
+    }
+
+    public void draw(GamePanel gamePanel, Graphics2D g2d) {
+        g2d.drawImage(movementTextures.get(currentImageIndex), gamePanel.getCamera().translateX(x),
+                gamePanel.getCamera().translateY(y), null);
     }
 }

@@ -1,3 +1,4 @@
+// GamePanel class
 package game;
 
 import entity.Player;
@@ -7,18 +8,19 @@ import javax.swing.*;
 import java.awt.*;
 
 public class GamePanel extends JPanel implements Runnable {
-    private static final int OBJECT_SIZE = 48; // 48x48 pixels
-    private static final int SCREEN_COL = 16;
-    private static final int SCREEN_ROW = 12;
-    private static final int SCREEN_WIDTH = SCREEN_COL * OBJECT_SIZE; // 768 pixels
-    private static final int SCREEN_HEIGHT = SCREEN_ROW * OBJECT_SIZE; // 576 pixels
+    private final int OBJECT_SIZE = 48; // 48x48 pixels
+    private final int SCREEN_COL = 16;
+    private final int SCREEN_ROW = 12;
+    private final int SCREEN_WIDTH = SCREEN_COL * OBJECT_SIZE; // 768 pixels
+    private final int SCREEN_HEIGHT = SCREEN_ROW * OBJECT_SIZE; // 576 pixels
 
-    private static final int FPS = 60;
+    private final int FPS = 60;
 
     private Thread gameThread;
     private final Player player;
     private final KeyHandler keyHandler;
     private final WorldGenerator worldGenerator;
+    private final Camera camera;
 
     private Image grassTexture;
     private Image sandTexture;
@@ -28,20 +30,26 @@ public class GamePanel extends JPanel implements Runnable {
         setPreferredSize(new Dimension(SCREEN_WIDTH, SCREEN_HEIGHT));
         setBackground(Color.BLACK);
         setFocusable(true);
-        player = new Player(100, 100);
+        player = new Player(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
         keyHandler = new KeyHandler();
         addKeyListener(keyHandler);
 
         try {
-            grassTexture = new ImageIcon("./assets/world/nature/ground/grass.png").getImage();
-            sandTexture = new ImageIcon("./assets/world/nature/ground/sand.png").getImage();
-            treeTexture = new ImageIcon("./assets/world/nature/tree_types/wide_leaf_tree.png").getImage();
+            grassTexture = new ImageIcon(".\\assets\\world\\nature\\ground\\grass.png").getImage();
+            sandTexture = new ImageIcon(".\\assets\\world\\nature\\ground\\sand.png").getImage();
+            treeTexture = new ImageIcon(".\\assets\\world\\nature\\tree_types\\wide_leaf_tree.png").getImage();
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         worldGenerator = new WorldGenerator();
-        worldGenerator.loadWorldFromFile("./assets/world/world_textures_placement.txt");
+        worldGenerator.loadWorldFromFile(".\\assets\\world\\world_textures_placement.txt");
+
+        camera = new Camera(0, 0);
+    }
+
+    public Camera getCamera() {
+        return camera;
     }
 
     public void startGameThread() {
@@ -73,6 +81,7 @@ public class GamePanel extends JPanel implements Runnable {
     protected void update() {
         player.update(keyHandler.isUpPressed(), keyHandler.isDownPressed(),
                 keyHandler.isLeftPressed(), keyHandler.isRightPressed());
+        camera.setPosition(player.getX() - SCREEN_WIDTH / 2, player.getY() - SCREEN_HEIGHT / 2);
     }
 
     @Override
@@ -92,13 +101,13 @@ public class GamePanel extends JPanel implements Runnable {
                     switch (lastDigit) {
                         case 1 ->
                             // Tree texture
-                                g2d.drawImage(treeTexture, col * OBJECT_SIZE, row * OBJECT_SIZE, null);
+                                g2d.drawImage(treeTexture, camera.translateX(col * OBJECT_SIZE), camera.translateY(row * OBJECT_SIZE), null);
                         case 2 ->
                             // Grass texture
-                                g2d.drawImage(grassTexture, col * OBJECT_SIZE, row * OBJECT_SIZE, null);
+                                g2d.drawImage(grassTexture, camera.translateX(col * OBJECT_SIZE), camera.translateY(row * OBJECT_SIZE), null);
                         case 3 ->
                             // Sand texture
-                                g2d.drawImage(sandTexture, col * OBJECT_SIZE, row * OBJECT_SIZE, null);
+                                g2d.drawImage(sandTexture, camera.translateX(col * OBJECT_SIZE), camera.translateY(row * OBJECT_SIZE), null);
                     }
 
                     tileValue /= 10;
@@ -106,7 +115,7 @@ public class GamePanel extends JPanel implements Runnable {
             }
         }
 
-        g2d.drawImage(player.getTextures().get(player.getCurrentImageIndex()), player.getX(), player.getY(), null);
+        player.draw(this, g2d);
 
         g2d.dispose();
     }
