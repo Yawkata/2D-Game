@@ -23,46 +23,67 @@ public class Player extends Entity {
             new ImageIcon(".\\assets\\player\\animation\\movement\\moving_right\\second_step.png").getImage()
     ));
 
-    private String direction;
+
     private int currentImageIndex;
     private int frameCounter;
 
     private final GamePanel gp;
 
     public Player(GamePanel gp) {
-        super(gp.SCREEN_WIDTH / 2, gp.SCREEN_HEIGHT / 2, 4);
+        super(gp.OBJECT_SIZE * 24 - gp.OBJECT_SIZE / 2, gp.OBJECT_SIZE * 22 - gp.OBJECT_SIZE / 2, 4);
         this.gp = gp;
         currentImageIndex = 4;
-        direction = "down";
         frameCounter = 0;
+
+        collisionArea = new Rectangle(9, 20, 30, 28);
+
     }
 
 
     public void update() {
         int newCount;
         String previousDirection = direction;
+        System.out.println("X: " + getX() + " Y: " + getY());
 
         if (gp.keyHandler.isUpPressed()) {
-            moveUp();
             direction = "up";
+            //moveUp();
         } else if (gp.keyHandler.isDownPressed()) {
-            moveDown();
             direction = "down";
+            //moveDown();
         } else if (gp.keyHandler.isLeftPressed()) {
-            moveLeft();
             direction = "left";
+            //moveLeft();
         } else if (gp.keyHandler.isRightPressed()) {
-            moveRight();
             direction = "right";
+            //moveRight();
         } else {
             currentImageIndex = getDirectionOffset();
             frameCounter = 0;
         }
 
+        collisionOn = false;
+        gp.collisionChecker.checkTile(this);
+        System.out.println(collisionOn);
+
+
+        if(!collisionOn){
+            switch (direction) {
+                case "up" -> moveUp();
+                case "down" -> moveDown();
+                case "left" -> moveLeft();
+                case "right" -> moveRight();
+            }
+        }
+
+
+
+
         if (!previousDirection.equals(direction)) {
             currentImageIndex = getDirectionOffset();
             frameCounter = 0;
         }
+
 
         if (frameCounter % 10 == 0) {
             newCount = (currentImageIndex % 3 == 2) ? getDirectionOffset() : (currentImageIndex + 1);
@@ -75,6 +96,11 @@ public class Player extends Entity {
                 !gp.keyHandler.isLeftPressed() && !gp.keyHandler.isRightPressed()) {
             currentImageIndex = getDirectionOffset() + 1;
         }
+
+        collisionOn = false;
+        gp.collisionChecker.checkTile(this);
+
+
     }
 
     private int getDirectionOffset() {
@@ -87,7 +113,7 @@ public class Player extends Entity {
     }
 
     public void draw(GamePanel gamePanel, Graphics2D g2d) {
-        g2d.drawImage(movementTextures.get(currentImageIndex), gamePanel.getCamera().translateX(x),
-                gamePanel.getCamera().translateY(y), null);
+        g2d.drawImage(movementTextures.get(currentImageIndex), gamePanel.getCamera().translateX(x) - gp.OBJECT_SIZE / 2,
+                gamePanel.getCamera().translateY(y) - gp.OBJECT_SIZE / 2, null);
     }
 }

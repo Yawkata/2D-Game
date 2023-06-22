@@ -1,13 +1,22 @@
 package entity;
 
+import java.awt.*;
+
 public class Entity {
     protected int x;
     protected int y;
-    protected int speed;
+    public int speed;
+
+    public String direction;
+
+    public Rectangle collisionArea;
+    public boolean collisionOn = false;
     public Entity(int x, int y, int speed) {
         this.x = x;
         this.y = y;
         this.speed = speed;
+        direction = "down";
+
     }
 
     public int getX() {

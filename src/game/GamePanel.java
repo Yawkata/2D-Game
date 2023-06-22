@@ -7,16 +7,29 @@ import javax.swing.*;
 import java.awt.*;
 
 public class GamePanel extends JPanel implements Runnable {
+
+    // SCREEN SETTINGS
     public final int OBJECT_SIZE = 48; // 48x48 pixels
     public final int SCREEN_COL = 16;
     public final int SCREEN_ROW = 12;
     public final int SCREEN_WIDTH = SCREEN_COL * OBJECT_SIZE; // 768 pixels
     public final int SCREEN_HEIGHT = SCREEN_ROW * OBJECT_SIZE; // 576 pixels
-
     public final Camera camera;
+
+    // WORLD SETTINGS
+    public final int maxWorldCol = 50;
+    public final int maxWorldRow = 50;
+
+    public final int worldWidth = OBJECT_SIZE * maxWorldCol;
+    public final int worldHeight = OBJECT_SIZE * maxWorldRow;
+
+
+    // FPS
     private static final int FPS = 60;
     private Thread gameThread;
-    private final Player player;
+
+    public CollisionChecker collisionChecker;
+    public final Player player;
     public final KeyHandler keyHandler;
     public TileManager tileM;
 
@@ -24,6 +37,7 @@ public class GamePanel extends JPanel implements Runnable {
         setPreferredSize(new Dimension(SCREEN_WIDTH, SCREEN_HEIGHT));
         setBackground(Color.BLACK);
         setFocusable(true);
+        collisionChecker = new CollisionChecker(this);
         player = new Player(this);
         keyHandler = new KeyHandler();
         addKeyListener(keyHandler);
@@ -75,6 +89,7 @@ public class GamePanel extends JPanel implements Runnable {
         tileM.draw(g2d);
 
         player.draw(this, g2d);
+
 
         g2d.dispose();
     }
