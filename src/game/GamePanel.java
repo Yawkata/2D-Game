@@ -1,6 +1,7 @@
 package game;
 
 import entity.Player;
+import entity.Zombie;
 import world.tile.TileManager;
 
 import javax.swing.*;
@@ -30,6 +31,7 @@ public class GamePanel extends JPanel implements Runnable {
 
     public CollisionChecker collisionChecker;
     public final Player player;
+    public final Zombie zombie;
     public final KeyHandler keyHandler;
     public TileManager tileM;
 
@@ -39,6 +41,7 @@ public class GamePanel extends JPanel implements Runnable {
         setFocusable(true);
         collisionChecker = new CollisionChecker(this);
         player = new Player(this);
+        zombie = new Zombie(this);
         keyHandler = new KeyHandler();
         addKeyListener(keyHandler);
         tileM = new TileManager(this);
@@ -78,6 +81,7 @@ public class GamePanel extends JPanel implements Runnable {
     protected void update() {
         player.update();
         camera.setPosition(player.getX() - SCREEN_WIDTH / 2, player.getY() - SCREEN_HEIGHT / 2);
+        zombie.update();
     }
 
     @Override
@@ -89,7 +93,7 @@ public class GamePanel extends JPanel implements Runnable {
         tileM.draw(g2d);
 
         player.draw(this, g2d);
-
+        zombie.draw(this, g2d);
 
         g2d.dispose();
     }

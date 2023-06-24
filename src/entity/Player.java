@@ -39,24 +39,25 @@ public class Player extends Entity {
 
     }
 
-
     public void update() {
         int newCount;
         String previousDirection = direction;
-        System.out.println("X: " + getX() + " Y: " + getY());
+
+        int prevX = x;
+        int prevY = y;
 
         if (gp.keyHandler.isUpPressed()) {
             direction = "up";
-            //moveUp();
+            moveUp();
         } else if (gp.keyHandler.isDownPressed()) {
             direction = "down";
-            //moveDown();
+            moveDown();
         } else if (gp.keyHandler.isLeftPressed()) {
             direction = "left";
-            //moveLeft();
+            moveLeft();
         } else if (gp.keyHandler.isRightPressed()) {
             direction = "right";
-            //moveRight();
+            moveRight();
         } else {
             currentImageIndex = getDirectionOffset();
             frameCounter = 0;
@@ -64,20 +65,11 @@ public class Player extends Entity {
 
         collisionOn = false;
         gp.collisionChecker.checkTile(this);
-        System.out.println(collisionOn);
 
-
-        if(!collisionOn){
-            switch (direction) {
-                case "up" -> moveUp();
-                case "down" -> moveDown();
-                case "left" -> moveLeft();
-                case "right" -> moveRight();
-            }
+        if (collisionOn) {
+            x = prevX;
+            y = prevY;
         }
-
-
-
 
         if (!previousDirection.equals(direction)) {
             currentImageIndex = getDirectionOffset();
@@ -96,11 +88,6 @@ public class Player extends Entity {
                 !gp.keyHandler.isLeftPressed() && !gp.keyHandler.isRightPressed()) {
             currentImageIndex = getDirectionOffset() + 1;
         }
-
-        collisionOn = false;
-        gp.collisionChecker.checkTile(this);
-
-
     }
 
     private int getDirectionOffset() {
