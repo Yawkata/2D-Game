@@ -6,251 +6,177 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Random;
+import java.util.List;
 
 public class Zombie extends Entity {
-    private final ArrayList<Image> textures = new ArrayList<>(Arrays.asList(
-            // Movement textures
-            new ImageIcon("./assets/zombie/animation/movement/moving_left/first_step.png").getImage(),
-            new ImageIcon("./assets/zombie/animation/movement/moving_left/second_step.png").getImage(),
-            new ImageIcon("./assets/zombie/animation/movement/moving_left/third_step.png").getImage(),
-            new ImageIcon("./assets/zombie/animation/movement/moving_left/idle.png").getImage(),
-            new ImageIcon("./assets/zombie/animation/movement/moving_right/first_step.png").getImage(),
-            new ImageIcon("./assets/zombie/animation/movement/moving_right/second_step.png").getImage(),
-            new ImageIcon("./assets/zombie/animation/movement/moving_right/third_step.png").getImage(),
-            new ImageIcon("./assets/zombie/animation/movement/moving_right/idle.png").getImage(),
-            // Attack textures
-            new ImageIcon("./assets/zombie/animation/attack/left/first_part.png").getImage(),
-            new ImageIcon("./assets/zombie/animation/attack/left/second_part.png").getImage(),
-            new ImageIcon("./assets/zombie/animation/attack/left/third_part.png").getImage(),
-            new ImageIcon("./assets/zombie/animation/attack/right/first_part.png").getImage(),
-            new ImageIcon("./assets/zombie/animation/attack/right/second_part.png").getImage(),
-            new ImageIcon("./assets/zombie/animation/attack/right/third_part.png").getImage()
-    ));
+    private static final int VISIBILITY_THRESHOLD = 200;
+    private static final int TOLERANCE = 5;
+    private static int MOVEMENT_FRAME_DELAY = 10;
+    private static final int ATTACK_FRAME_DELAY = 10;
 
-    private String direction;
-    private int currentImageIndex;
-    private int frameCounter;
-    private boolean isChasing;
-
+    private final List<Image> movementTextures;
+    private final List<Image> attackTextures;
+    private int movementAnimationFrame = 0;
+    private int attackAnimationFrame = 0;
+    private boolean isAttacking;
     private final GamePanel gp;
-
-    private boolean isNearPlayer = false;
-
     private int targetX;
     private int targetY;
 
-    public Zombie(GamePanel gp) {
+    public Zombie(GamePanel gamePanel) {
         super(1068, 1028, 3);
-        this.gp = gp;
-        currentImageIndex = 3; // Set idle state for initial image
-        direction = "left";
-        frameCounter = 0;
-        isChasing = false;
-        targetX = getRandomX();
-        targetY = getRandomY();
+        this.gp = gamePanel;
+        this.isAttacking = false;
+
+        movementTextures = loadMovementTextures();
+        attackTextures = loadAttackTextures();
+
+        setRandomTarget();
+
         collisionArea = new Rectangle(9, 20, 30, 28);
     }
 
     public void update() {
-        // Check visibility and determine whether to chase the player
-        isChasing = checkPlayerVisibility();
-
-        if (isChasing) {
-            // Calculate player's position relative to the zombie
-            int dx = gp.player.getX() - x;
-            int dy = gp.player.getY() - y;
-
-            int tolerance = 5;
-
-            if (Math.abs(dx) <= tolerance && Math.abs(dy) <= tolerance) {
-                isNearPlayer = true;
-            } else if (Math.abs(dx) > tolerance) {
-                isNearPlayer = false;
-
-                if (dx < 0) {
-                    moveLeft();
-                    direction = "left";
-                } else {
-                    moveRight();
-                    direction = "right";
-                }
-
-            } else if (Math.abs(dy) > tolerance) {
-                isNearPlayer = false;
-
-                if (dy < 0) {
-                    moveUp();
-                } else {
-                    moveDown();
-                }
-            }
+        if (isPlayerVisible(gp.player)) {
+            isAttacking = isNearPlayer(gp.player);
+            speed = 3;
+            MOVEMENT_FRAME_DELAY = 10;
+            moveTowards(gp.player.getX(), gp.player.getY());
         } else {
-            // Zombie is idle, set idle image and direction
-            isNearPlayer = false;
-            if (reachedTarget()) {
-                // Generate new random target coordinates close to the zombie
-                targetX = getRandomXInRange(x - 50, x + 50);
-                targetY = getRandomYInRange(y - 50, y + 50);
-            }
-            moveTowardsTarget();
-            currentImageIndex = getMovementOffset() + (frameCounter / 10) % 3; // Update animation frame for idle state
+            isAttacking = false;
+            speed = 1;
+            MOVEMENT_FRAME_DELAY = 30;
+            wander();
+        }
+    }
+
+    private boolean isPlayerVisible(Player player) {
+        int dx = Math.abs(player.getX() - getX());
+        int dy = Math.abs(player.getY() - getY());
+        return dx <= VISIBILITY_THRESHOLD && dy <= VISIBILITY_THRESHOLD;
+    }
+
+    private boolean isNearPlayer(Player player) {
+        int dx = Math.abs(player.getX() - x);
+        int dy = Math.abs(player.getY() - y);
+        return dx <= gp.OBJECT_SIZE / 2 && dy <= gp.OBJECT_SIZE / 2;
+    }
+
+    private void moveTowards(int targetX, int targetY) {
+        int dx = Integer.compare(targetX, getX());
+        int dy = Integer.compare(targetY, getY());
+
+        int distanceX = Math.abs(targetX - getX());
+        int distanceY = Math.abs(targetY - getY());
+
+        int prevX = x;
+        int prevY = y;
+
+        if (distanceX > TOLERANCE && dx != 0) {
+            moveHorizontally(dx);
+        } else if (distanceY > TOLERANCE && dy != 0) {
+            moveVertically(dy);
         }
 
-        // Increment frame counter for animation timing
-        frameCounter++;
+        collisionOn = false;
+        gp.collisionChecker.checkTile(this);
+
+        if (collisionOn) {
+            x = prevX;
+            y = prevY;
+        }
     }
 
     private void wander() {
-        if (!isChasing && frameCounter % 60 == 0) {
-            if (x == targetX && y == targetY) {
-                targetX = getRandomX();
-                targetY = getRandomY();
-            }
-
-            // Calculate the direction to the target coordinates
-            int dx = targetX - x;
-            int dy = targetY - y;
-
-            if (dx < 0) {
-                moveLeft();
-                direction = "left";
-            } else if (dx > 0) {
-                moveRight();
-                direction = "right";
-            }
-
-            // Update the zombie's position based on the chosen direction
-            int newX = x + dx;
-            int newY = y + dy;
-
-            // Check if the new position is within the game bounds and does not collide with obstacles
-            if (newX >= 0 && newX < gp.SCREEN_WIDTH && newY >= 0 && newY < gp.SCREEN_HEIGHT && !collidesWithObstacle(newX, newY)) {
-                x = newX;
-                y = newY;
-            }
-
-            // Update the animation frame based on the current direction
-            currentImageIndex = getMovementOffset() + (frameCounter / 10) % 3;
-        }
-    }
-
-    private boolean checkPlayerVisibility() {
-        int dx = Math.abs(gp.player.getX() - x);
-        int dy = Math.abs(gp.player.getY() - y);
-
-        int visibilityThreshold = 200;
-
-        if (dx <= visibilityThreshold && dy <= visibilityThreshold) {
-            int stepSize = 10;
-
-            int numSteps = Math.max(dx / stepSize, dy / stepSize);
-
-            float dxStep = dx / (float) numSteps;
-            float dyStep = dy / (float) numSteps;
-
-            float x = this.x;
-            float y = this.y;
-            for (int i = 0; i < numSteps; i++) {
-                x += dxStep;
-                y += dyStep;
-
-                collisionOn = false;
-                gp.collisionChecker.checkTile(this);
-                if (collisionOn) {
-                    return false;
-                }
-            }
-
-            return true;
+        if (reachedTarget()) {
+            setRandomTarget();
         }
 
-        return false;
-    }
-
-    private boolean collidesWithObstacle(int x, int y) {
-        // Implement your collision detection logic here
-        // Check if the position (x, y) collides with any obstacles in your game world
-        // Return true if collision occurs, false otherwise
-
-        // Placeholder implementation assuming no obstacles
-        return false;
-    }
-
-    private int getRandomX() {
-        return new Random().nextInt(gp.SCREEN_WIDTH);
-    }
-
-    private int getRandomY() {
-        return new Random().nextInt(gp.SCREEN_HEIGHT);
-    }
-
-    private boolean reachedTarget() {
-        // Check if the zombie has reached its target coordinates
-        return x == targetX && y == targetY;
-    }
-
-    private void moveTowardsTarget() {
-        // Move the zombie towards the target coordinates
-        int dx = Integer.compare(targetX, x);
-        int dy = Integer.compare(targetY, y);
-
-        if (dx != 0 || dy != 0) {
-            if (Math.abs(dx) >= Math.abs(dy)) {
-                moveHorizontally(dx);
-                moveVertically(dy);
-            } else {
-                moveVertically(dy);
-                moveHorizontally(dx);
-            }
-        }
+        moveTowards(targetX, targetY);
     }
 
     private void moveHorizontally(int dx) {
-        if (dx > 0) {
-            moveRight();
-            direction = "right";
-        } else if (dx < 0) {
+        if (dx < 0) {
             moveLeft();
             direction = "left";
+        } else if (dx > 0) {
+            moveRight();
+            direction = "right";
         }
     }
 
     private void moveVertically(int dy) {
-        if (dy > 0) {
-            moveDown();
-        } else if (dy < 0) {
+        if (dy < 0) {
             moveUp();
+        } else {
+            moveDown();
         }
     }
 
-    public void draw(GamePanel gamePanel, Graphics2D g2d) {
-        if (isNearPlayer) {
-            currentImageIndex = getAttackOffset() + (frameCounter / 10) % 3;
-        } else if (isChasing) {
-            currentImageIndex = getMovementOffset() + (frameCounter / 10) % 3;
+    private boolean reachedTarget() {
+        return Math.abs(getX() - targetX) <= TOLERANCE && Math.abs(getY() - targetY) <= TOLERANCE;
+    }
+
+    private void setRandomTarget() {
+        targetX = getRandomInRange(getX() - 100, getX() + 100);
+        targetY = getRandomInRange(getY() - 100, getY() + 100);
+    }
+
+    private int getRandomInRange(int min, int max) {
+        return (int) (Math.random() * (max - min + 1)) + min;
+    }
+
+    private List<Image> loadMovementTextures() {
+        return new ArrayList<>(Arrays.asList(
+                new ImageIcon(".\\assets\\zombie\\animation\\movement\\moving_left\\step_1.png").getImage(),
+                new ImageIcon(".\\assets\\zombie\\animation\\movement\\moving_left\\step_2.png").getImage(),
+                new ImageIcon(".\\assets\\zombie\\animation\\movement\\moving_left\\step_3.png").getImage(),
+                new ImageIcon(".\\assets\\zombie\\animation\\movement\\moving_left\\idle.png").getImage(),
+                new ImageIcon(".\\assets\\zombie\\animation\\movement\\moving_right\\step_1.png").getImage(),
+                new ImageIcon(".\\assets\\zombie\\animation\\movement\\moving_right\\step_2.png").getImage(),
+                new ImageIcon(".\\assets\\zombie\\animation\\movement\\moving_right\\step_3.png").getImage(),
+                new ImageIcon(".\\assets\\zombie\\animation\\movement\\moving_right\\idle.png").getImage()
+        ));
+    }
+
+    private List<Image> loadAttackTextures() {
+        return new ArrayList<>(Arrays.asList(
+                new ImageIcon(".\\assets\\zombie\\animation\\attack\\left\\part_1.png").getImage(),
+                new ImageIcon(".\\assets\\zombie\\animation\\attack\\left\\part_2.png").getImage(),
+                new ImageIcon(".\\assets\\zombie\\animation\\attack\\left\\part_3.png").getImage(),
+                new ImageIcon(".\\assets\\zombie\\animation\\attack\\right\\part_1.png").getImage(),
+                new ImageIcon(".\\assets\\zombie\\animation\\attack\\right\\part_2.png").getImage(),
+                new ImageIcon(".\\assets\\zombie\\animation\\attack\\right\\part_3.png").getImage()
+        ));
+    }
+
+    public void draw(Graphics2D g2d) {
+        Image currentTexture;
+
+        if (isAttacking) {
+            if (direction.equals("left")) {
+                currentTexture = attackTextures.get((attackAnimationFrame / ATTACK_FRAME_DELAY) % 3);
+            } else {
+                currentTexture = attackTextures.get(3 + ((attackAnimationFrame / ATTACK_FRAME_DELAY) % 3));
+            }
+            attackAnimationFrame = (attackAnimationFrame + 1) % (ATTACK_FRAME_DELAY * 6);
+        } else {
+            List<Image> currentMovementTextures = getMovementTexturesForDirection(direction);
+            currentTexture = currentMovementTextures.get((movementAnimationFrame / MOVEMENT_FRAME_DELAY) % currentMovementTextures.size());
+            movementAnimationFrame = (movementAnimationFrame + 1) % (MOVEMENT_FRAME_DELAY * currentMovementTextures.size());
         }
 
-        if (currentImageIndex >= textures.size()) {
-            currentImageIndex = 0; // Reset to the first image if index is out of bounds
+        g2d.drawImage(currentTexture, gp.getCamera().translateX(getX()) - gp.OBJECT_SIZE / 2,
+                gp.getCamera().translateY(getY()) - gp.OBJECT_SIZE / 2, gp.OBJECT_SIZE, gp.OBJECT_SIZE, null);
+    }
+
+    private List<Image> getMovementTexturesForDirection(String direction) {
+        if (direction.equals("left")) {
+            return movementTextures.subList(0, 4);
+        } else if (direction.equals("right")) {
+            return movementTextures.subList(4, 8);
         }
 
-        g2d.drawImage(textures.get(currentImageIndex), gamePanel.getCamera().translateX(x), gamePanel.getCamera().translateY(y), gp.OBJECT_SIZE, gp.OBJECT_SIZE, null);
-    }
-
-    private int getAttackOffset() {
-        return (direction.equals("left")) ? 8 : 11;
-    }
-
-    private int getMovementOffset() {
-        return (direction.equals("left")) ? 0 : 4;
-    }
-
-    private int getRandomXInRange(int minX, int maxX) {
-        return new Random().nextInt(maxX - minX + 1) + minX;
-    }
-
-    private int getRandomYInRange(int minY, int maxY) {
-        return new Random().nextInt(maxY - minY + 1) + minY;
+        return movementTextures;
     }
 }

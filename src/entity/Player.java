@@ -99,8 +99,8 @@ public class Player extends Entity {
         };
     }
 
-    public void draw(GamePanel gamePanel, Graphics2D g2d) {
-        g2d.drawImage(movementTextures.get(currentImageIndex), gamePanel.getCamera().translateX(x) - gp.OBJECT_SIZE / 2,
-                gamePanel.getCamera().translateY(y) - gp.OBJECT_SIZE / 2, null);
+    public void draw(Graphics2D g2d) {
+        g2d.drawImage(movementTextures.get(currentImageIndex), gp.getCamera().translateX(x) - gp.OBJECT_SIZE / 2,
+                gp.getCamera().translateY(y) - gp.OBJECT_SIZE / 2, null);
     }
 }

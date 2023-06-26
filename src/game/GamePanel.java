@@ -92,8 +92,8 @@ public class GamePanel extends JPanel implements Runnable {
 
         tileM.draw(g2d);
 
-        player.draw(this, g2d);
-        zombie.draw(this, g2d);
+        player.draw(g2d);
+        zombie.draw(g2d);
 
         g2d.dispose();
     }

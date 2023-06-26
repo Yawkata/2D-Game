@@ -72,8 +72,8 @@ public class TileManager {
                  */
 
 
-                    g2.drawImage(tile.get(tileValue).image, gp.camera.translateX(col * gp.OBJECT_SIZE),
-                            gp.camera.translateY(row * gp.OBJECT_SIZE), gp.OBJECT_SIZE, gp.OBJECT_SIZE, null);
+                g2.drawImage(tile.get(tileValue).image, gp.camera.translateX(col * gp.OBJECT_SIZE),
+                        gp.camera.translateY(row * gp.OBJECT_SIZE), gp.OBJECT_SIZE, gp.OBJECT_SIZE, null);
                 //}
 
 
